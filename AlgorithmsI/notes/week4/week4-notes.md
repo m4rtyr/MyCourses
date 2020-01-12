@@ -136,5 +136,103 @@ Above is good for small priority queue implementations, but not for most applica
     * Make poor use of cache memory
     * Not stable
 
+## Symbol Tables
 
+* Key-value pair abstraction
+
+  * Insert a value with specified key
+  * Given a key, search for the corresponding value
+
+* Basic symbol table API
+
+  * ```java
+    public class ST<Key, Value>
+    	ST() // Create a symbol table
+      void put(Key, key, Value val) // Put key value pair into table
+      Value get(Key, key) // Value paired with key
+      void delete(Key, key) // Remove key & value from table
+      boolean contains(Key key) // Is there a value paired with key?
+      boolean isEmpty() // Is the table empty?
+      int size() // Number of key-value pairs
+      Iterable<Key> keys() // all keys in the table
+    ```
+
+* Conventions
+
+  * Values aren't `null` 
+
+  * Method `get()` returns `null` if no key present
+
+  * Method `put()` overwrites old value with new value
+
+  * Intended Consequences
+
+    * Easy to implement `contains()`
+
+      ```java
+      public boolean contains(Key, key)
+      { return get(key) != null; }
+      ```
+
+    * Lazy version of `delete()`
+
+      ```java
+      public void delete(Key, key)
+      { put(key, null); }
+      ```
+
+* Keys and values
+
+  * Value type — Any generic type
+  * Key type
+    * Assume keys are `Comparable` use `compareTo()` 
+    * Assume keys are any generic type use `equals()` to test equality
+    * Assume keys are any geneirc type use `equals()` to test equality; use `hashCode()` to scramble key.
+  * Best practices — Use immutable type for symbol table key
+
+* Ordered operations
+
+  * Symbol table API usually much larger, including `put()`, `get()`, `delete()`, `isEmpty()`, `rank()`, `select()`, etc.
+
+## Binary Search Trees
+
+* BST — Binary tree in symmetric order
+* Symmetric Order — All nodes to parent's **left are smaller**; all nodes to parent's **right are bigger**
+* Different from Binary Heap where **parent is larger than both children**
+* Tree Shape
+  * Many BSTs correspond to same set of keys; best case is a complete binary tree; worst case is when nodes are all insert in order
+* Quicksort partitioning and binary search tree correspondance (when no duplicate keys); allows us to analyze BST performance to be ~ $~ 2 \ln N$ compares
+* Ordered Operations
+  * Floor/Ceiling implemented by storing subcounts in each disjoint binary tree
+  * Inorder traversal — Traverse left subtree, enqueue key, traverse right subtree.
+  * **All ordered operations (except iteration) are proportional to height of BST ($\log N$ if inserted in random order)**
+* BST Deletion
+  * Lazy approach — Set value to `null` but leave key in tree to guide search (don't consider it equal in search)
+    * Cost: ~ $2 \ln N'$ per insert, search, and delete where $N'$ is # of key-value pairs ever inserted into BST
+    * Problem: Memory overload
+  * Deleting the minimum
+    * Go left until finding a node with `null` left link
+    * Replace node by its right link
+    * Update subtree count
+  * Hibbard deletion
+    * Delete node `t` containing key `k`
+    * Case 0 (no children): Delete `t` by setting parent link to `null`
+    * Case 1 (1 child): Delete `t` by replacing parent link to it (like deleting minimum) with its child
+    * Case 2 (2 children):
+      * Find successor `x` of `t`
+      * Delete minimum in `t's` rights subtree 
+      * Put `x` in `t's` spot
+      * Unsatisfactory solution: Not symmetric
+        * Trees not random $\rarr$ $\sqrt{N}$ per op.
+        * Other operations also become $\sqrt{N}$ is deletions allowed
+
+
+
+## ST Summary
+
+| ST Implementation                  | Worst-case cost (after N inserts)  | Average Case (after N random inserts)              | Ordered Iteration? | Key interface |
+| ---------------------------------- | ---------------------------------- | -------------------------------------------------- | ------------------ | ------------- |
+| Sequential Search (unordered list) | Search — $N$ Insert — $N$          | Search hit — $N / 2$ Insert — $N$                  | No                 | `equals()`    |
+| Binary Search (ordered array)      | Search — $\log N$ <br>Insert — $N$ | Search hit — $\log N$<br> Insert — $N/2$           | Yes                | `compareTo()` |
+| BST                                | Search — $N$ <br>Insert — $N$      | Search hit — $1.39 \lg N$<br>Insert — $1.39 \lg N$ | Yes                | `compareTo()` |
 
