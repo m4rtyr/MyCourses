@@ -58,7 +58,7 @@
   * *Bipartite graph* — graph whose vertices can be divided into two sets such that all edges connect a vertex in one set with a vertex in another set
 
   
-## Undirected Graph Data Type
+### Undirected Graph Data Type
 
   ```java
   public class Graph 
@@ -85,11 +85,11 @@
 
   Using the third option, space used is proportional to $E + V$ and time is constant when adding an edge. 
 
-## Design Pattern for Graph Processing
+### Design Pattern for Graph Processing
 
 Generally, when writing implementations for Graphs, we try to decouple the algorithm from the Graph class itself.
 
-# Depth First Search
+### Depth First Search
 
 DFS is a classic algorithm for searching a graph. The algorithm is as follows:
 
@@ -97,3 +97,14 @@ DFS is a classic algorithm for searching a graph. The algorithm is as follows:
 * Visit all Vertices that are adjacent to it.
 * Stop if graph is completely visited or destination vertex found.
 
+
+
+**Prove: DFS marks all vertices connected to a source in time proportional to the sum of their degrees.**
+
+*Proof*:
+
+Suppose we start at source vertex $s$. From there, the algorithm marks $s$ and its neighbors. Now, assume there's some unmarked vertex $w$ that $s$ is connected to. Since $s$ itself is marked, any path from $s$ to $w$ must have at least one edge from the set of marked vertices to the set of unmarked vertices, say $v \text{-}x$. However, this path cannot exist, since if $v$ was marked by the algorithm, $x$ and all connected, unmarked vertices would be marked, too. By *reductio ad absurdum* the algorithm does mark all vertices starting from $s$. The time bound follows from the fact that the algorithm must check each vertex's neighbors and whether they're marked. 
+
+#### Finding Paths
+
+Computing the path from $s$ to $v$ involves using Depth First Search and storing the path in a queue.
