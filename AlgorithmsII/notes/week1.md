@@ -59,7 +59,7 @@
 
   
 ## Undirected Graph Data Type
-  
+
   ```java
   public class Graph 
     Graph(int V)								 // create a V-vertex graph w/ no edges
@@ -70,17 +70,21 @@
     Iterable<Integer> adj(int v) // vertices adjacent to vertex v
     String toString()						 // string representation
   ```
-  
+
   The second constructor assumes input format containing $2E + 2$ integer values: $V$, then $E$, then $E$ pairs of values between $0$ and $V-1$, each pair denoting an edge.
-  
+
   ### Representation 
-  
+
   Need to balance space to store graph implementation and time-efficiency to ensure graph processing.
-  
+
   Three types of representations:
-  
+
   * *Adjacency matrix* — $V$ by $V$ boolean array w/ entry in row $v$ and column $w$ defined as true if there is an edge connecting vertex $v$ to $w$. This fails on space efficiency ($V^2$)
   * *Array of Edges* — Using Edge class w/ two instance variables of type `int` (implementing `adj()` method would require examining all edges, so it's time inefficient).
   * *Array of Adjacency Lists* — Maintain vertex-indexed array of lists of vertices adjacent to each vertex (ex. Vertex 0, 1, 2, ... would contain a list of vertices adjacent to it). This is the ideal since it satisfies both requirements.
-  
-  ### 
+
+  Using the third option, space used is proportional to $E + V$ and time is constant when adding an edge. 
+
+## Design Pattern for Graph Processing
+
+Generally, when writing implementations for Graphs, we try to decouple the algorithm from the Graph class itself.
