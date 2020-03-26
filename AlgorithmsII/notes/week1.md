@@ -107,4 +107,16 @@ Suppose we start at source vertex $s$. From there, the algorithm marks $s$ and i
 
 #### Finding Paths
 
-Computing the path from $s$ to $v$ involves using Depth First Search and storing the path in a queue.
+Computing the path from $s$ to $v$ involves using Depth First Search and finding the path from $s$ to every other vertex in the graph, storing the edges in an array.
+
+**Prove: DFS allows us to provide clients with a path from a given source to any marked vertex in time proportional to its length**.
+
+*Proof*:
+
+Through induction, the array used to store each edge connecting the vertices together is a tree rooted at the source. To build the path requires following the tree from the source to the vertex.
+
+### Breadth First Search
+
+Generally interested in problem of single source shortest paths: given a graph and source vertex $s$, support queries of form *is there a path from $s$ to a given target vertex $v$?* If so, find a shortest such path.
+
+Using a FIFO queue, we start from $s$ and check its edges for vertex $v$. If not found, we then go out two edges and check for vertex $v$ again. We do this until we find vertex $v$.
