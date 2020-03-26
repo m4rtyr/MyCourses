@@ -88,3 +88,12 @@
 ## Design Pattern for Graph Processing
 
 Generally, when writing implementations for Graphs, we try to decouple the algorithm from the Graph class itself.
+
+# Depth First Search
+
+DFS is a classic algorithm for searching a graph. The algorithm is as follows:
+
+* Visit Vertex V
+* Visit all Vertices that are adjacent to it.
+* Stop if graph is completely visited or destination vertex found.
+
