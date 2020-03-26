@@ -130,3 +130,5 @@ By induction, the vertices enter and leave the queue in order of their distance 
 *Corollary*:
 
 BFS takes time proportional to $E + V$ in the worst case because it marks all vertices (and so the time is the sum of their degrees). 
+
+*Note*: An algorithm is *online* if it doesn't require preprocessing (union-find is online whereas DFS requires the construction of an entire graph).
