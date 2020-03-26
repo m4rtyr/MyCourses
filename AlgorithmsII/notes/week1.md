@@ -58,7 +58,11 @@
   * *Bipartite graph* — graph whose vertices can be divided into two sets such that all edges connect a vertex in one set with a vertex in another set
 
   
+<<<<<<< HEAD
+## Undirected Graph Data Type
+=======
 ### Undirected Graph Data Type
+>>>>>>> master
 
   ```java
   public class Graph 
@@ -83,6 +87,10 @@
   * *Array of Edges* — Using Edge class w/ two instance variables of type `int` (implementing `adj()` method would require examining all edges, so it's time inefficient).
   * *Array of Adjacency Lists* — Maintain vertex-indexed array of lists of vertices adjacent to each vertex (ex. Vertex 0, 1, 2, ... would contain a list of vertices adjacent to it). This is the ideal since it satisfies both requirements.
 
+<<<<<<< HEAD
+  ### 
+
+=======
   Using the third option, space used is proportional to $E + V$ and time is constant when adding an edge. 
 
 ### Design Pattern for Graph Processing
@@ -130,3 +138,4 @@ By induction, the vertices enter and leave the queue in order of their distance 
 *Corollary*:
 
 BFS takes time proportional to $E + V$ in the worst case because it marks all vertices (and so the time is the sum of their degrees). 
+>>>>>>> master
