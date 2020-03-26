@@ -132,3 +132,18 @@ By induction, the vertices enter and leave the queue in order of their distance 
 BFS takes time proportional to $E + V$ in the worst case because it marks all vertices (and so the time is the sum of their degrees). 
 
 *Note*: An algorithm is *online* if it doesn't require preprocessing (union-find is online whereas DFS requires the construction of an entire graph).
+
+## Symbol Graphs
+
+Vertices are strings. The API for Symbol Graphs is the following:
+
+```java
+public class SymbolGraph {
+  public SymbolGraph(String filename, String delimiter) // build graph
+  boolean contains(String key)													// Is key a vertex
+  int indexOf(String key)																// index of key
+  String nameOf(int v)																	// key w/ index v
+  Graph graph()																					// the graph
+}	
+```
+
