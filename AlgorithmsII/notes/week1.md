@@ -120,3 +120,13 @@ Through induction, the array used to store each edge connecting the vertices tog
 Generally interested in problem of single source shortest paths: given a graph and source vertex $s$, support queries of form *is there a path from $s$ to a given target vertex $v$?* If so, find a shortest such path.
 
 Using a FIFO queue, we start from $s$ and check its edges for vertex $v$. If not found, we then go out two edges and check for vertex $v$ again. We do this until we find vertex $v$.
+
+**Prove: For any vertex $v$ reachable from $s$, BFS computes a shortest path from $s$ to $v$ (not path from $s$ to $v$ has fewer edges)** 
+
+*Proof*:
+
+By induction, the vertices enter and leave the queue in order of their distance from $s$. Therefore, when a vertex enters a queue, there is no shorter path to it.
+
+*Corollary*:
+
+BFS takes time proportional to $E + V$ in the worst case because it marks all vertices (and so the time is the sum of their degrees). 
