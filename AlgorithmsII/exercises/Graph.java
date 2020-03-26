@@ -3,7 +3,7 @@
  * @Date:   2020-03-25T19:52:21-05:00
  * @Email:  silentcat@protonmail.com
  * @Last modified by:   simulacr4m
- * @Last modified time: 2020-03-25T21:27:48-05:00
+ * @Last modified time: 2020-03-25T21:30:05-05:00
  */
 
 import edu.princeton.cs.algs4.Bag;
@@ -65,7 +65,7 @@ public class Graph {
 
   public String toString() {
     String s = "";
-    s += V() + "vertices, " + E() + " edges\n";
+    s += V() + " vertices, " + E() + " edges\n";
     for (int v = 0; v < graph.length; v++) {
       s += v + ": ";
       for (int w : graph[v]) {
