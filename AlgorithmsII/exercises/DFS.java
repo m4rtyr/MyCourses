@@ -3,8 +3,12 @@
  * @Date:   2020-03-25T22:03:10-05:00
  * @Email:  silentcat@protonmail.com
  * @Last modified by:   simulacr4m
- * @Last modified time: 2020-03-25T22:31:50-05:00
+ * @Last modified time: 2020-03-26T16:20:58-05:00
  */
+
+import edu.princeton.cs.algs4.In;
+import edu.princeton.cs.algs4.Bag;
+import edu.princeton.cs.algs4.StdOut;
 
 public class DFS {
 
@@ -20,9 +24,9 @@ public class DFS {
   }
 
   private void search(int v) {
-    marked[v] = true;
+    visited[v] = true;
     for (int w : g.adj(v))
-      if (!marked[w])
+      if (!visited[w])
         search(w);
   }
 
@@ -36,5 +40,19 @@ public class DFS {
 
   public boolean marked(int v) {
     return visited[v];
+  }
+
+  public static void main(String[] args) {
+    Graph G = new Graph(new In(args[0]));
+    int s = Integer.parseInt(args[1]);
+    DFS search = new DFS(G, s);
+    search.search();
+    for (int v = 0; v < G.V(); v++)
+      if (search.marked(v))
+        StdOut.print(v + " ");
+    StdOut.println();
+    if (search.count() != G.V())
+      StdOut.printf("not ");
+    StdOut.println("connected");
   }
 }
