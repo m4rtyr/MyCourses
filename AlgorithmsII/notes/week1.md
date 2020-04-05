@@ -147,3 +147,42 @@ public class SymbolGraph {
 }	
 ```
 
+## Directed Graphs
+
+In directed graphs, edges are one-way. Directed graphs are also called digraphs. A directed graph is a set of vertices and a collection of directed edges. Each directed edge connects an ordered pair of vertices. 
+
+### Definitions
+
+* Outdegree — number of edges leaving the vertex
+* Indegree — number of edges entering vertex
+* Tail — first vertex in directed edge
+* Head — 2nd vertex in directed edge
+* Directed path — sequence of vertices in which there is a directed edge pointing from each vertex in the sequence to its successor in the sequence with no repeated edges. 
+* Simple directed path — directed path with no repeated vertices
+* Directed cycle — directed path with at least one edge whose first and last vertices are the same
+* Simple directed cycle — directed cycle with no repeated vertices (except requisite repetition of first and last vertices)
+* Vertex $w$ is reachable from $v$ if there is a directed path from $v$ to $w$.
+
+### Digraph Data Type
+
+API:
+
+```java
+public class Digraph
+  Digraph(int V)															// create a V-vertex digraph
+  Digraph(In in)															// create a digraph from in
+  int V()																			// # of vertices
+  int E()																			// # of edges
+  void addEdge(int v, int w)									// add edge v->w
+  Iterable<Integer> adj(int w)								// vertices left from v
+  Digraph reverse()														// reverse of digraph
+  String toString()														// String representation
+```
+
+### Representation
+
+Adjacency list 
+
+## Reverse of Digraph
+
+Returns a copy of the digraph with all edges reversed (allows clients to find edges that point to each vertex while `adj()` gives just vertices connected by edges that point *from* each vertex.
