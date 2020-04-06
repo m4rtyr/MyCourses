@@ -57,13 +57,7 @@
 
   * *Bipartite graph* — graph whose vertices can be divided into two sets such that all edges connect a vertex in one set with a vertex in another set
 
-  
-<<<<<<< HEAD
-## Undirected Graph Data Type
-=======
 ### Undirected Graph Data Type
->>>>>>> master
-
   ```java
   public class Graph 
     Graph(int V)								 // create a V-vertex graph w/ no edges
@@ -84,14 +78,12 @@
   Three types of representations:
 
   * *Adjacency matrix* — $V$ by $V$ boolean array w/ entry in row $v$ and column $w$ defined as true if there is an edge connecting vertex $v$ to $w$. This fails on space efficiency ($V^2$)
+
   * *Array of Edges* — Using Edge class w/ two instance variables of type `int` (implementing `adj()` method would require examining all edges, so it's time inefficient).
+
   * *Array of Adjacency Lists* — Maintain vertex-indexed array of lists of vertices adjacent to each vertex (ex. Vertex 0, 1, 2, ... would contain a list of vertices adjacent to it). This is the ideal since it satisfies both requirements.
 
-<<<<<<< HEAD
-  ### 
-
-=======
-  Using the third option, space used is proportional to $E + V$ and time is constant when adding an edge. 
+    Using the third option, space used is proportional to $E + V$ and time is constant when adding an edge. 
 
 ### Design Pattern for Graph Processing
 
@@ -138,4 +130,114 @@ By induction, the vertices enter and leave the queue in order of their distance 
 *Corollary*:
 
 BFS takes time proportional to $E + V$ in the worst case because it marks all vertices (and so the time is the sum of their degrees). 
->>>>>>> master
+
+<<<<<<< HEAD
+*Note*: An algorithm is *online* if it doesn't require preprocessing (union-find is online whereas DFS requires the construction of an entire graph).
+
+## Symbol Graphs
+
+Vertices are strings. The API for Symbol Graphs is the following:
+
+```java
+public class SymbolGraph {
+  public SymbolGraph(String filename, String delimiter) // build graph
+  boolean contains(String key)													// Is key a vertex
+  int indexOf(String key)																// index of key
+  String nameOf(int v)																	// key w/ index v
+  Graph graph()																					// the graph
+}	
+```
+
+## Directed Graphs
+
+In directed graphs, edges are one-way. Directed graphs are also called digraphs. A directed graph is a set of vertices and a collection of directed edges. Each directed edge connects an ordered pair of vertices. 
+
+### Definitions
+
+* Outdegree — number of edges leaving the vertex
+* Indegree — number of edges entering vertex
+* Tail — first vertex in directed edge
+* Head — 2nd vertex in directed edge
+* Directed path — sequence of vertices in which there is a directed edge pointing from each vertex in the sequence to its successor in the sequence with no repeated edges. 
+* Simple directed path — directed path with no repeated vertices
+* Directed cycle — directed path with at least one edge whose first and last vertices are the same
+* Simple directed cycle — directed cycle with no repeated vertices (except requisite repetition of first and last vertices)
+* Vertex $w$ is reachable from $v$ if there is a directed path from $v$ to $w$.
+
+### Digraph Data Type
+
+API:
+
+```java
+public class Digraph
+  Digraph(int V)															// create a V-vertex digraph
+  Digraph(In in)															// create a digraph from in
+  int V()																			// # of vertices
+  int E()																			// # of edges
+  void addEdge(int v, int w)									// add edge v->w
+  Iterable<Integer> adj(int w)								// vertices left from v
+  Digraph reverse()														// reverse of digraph
+  String toString()														// String representation
+```
+
+### Representation
+
+Adjacency list 
+
+#### Reverse of Digraph
+
+Returns a copy of the digraph with all edges reversed (allows clients to find edges that point to each vertex while `adj()` gives just vertices connected by edges that point *from* each vertex.
+
+### Reachability in Digraphs
+
+Depth First Search can still be used. Takes time proportional to sum of outdegree of all vertices.
+
+
+
+### Applications
+
+Mark and sweep garbage collection — Using DFS, we can mark the set of objects that are accessible. Objects are are unmarked can be returned to memory.
+
+Finding paths in Digraphs — shortest path can be found with Breadth-First search and paths in general can be found with DFS
+
+### Cycles and DAGs
+
+Scheduling problems often apply Digraphs. This involves arranging for the completion of set of jobs under a set of constraints. The most important type of constraint is precedence constraints, where certain jobs must be performed before others. Precedence-constrained scheduling — given a set of jobs to be completed, with precedence constraints that specify that certain jobs have to be completed before certain other jobs are begun, how can we schedule jobs such that all are completed with the required constraints?
+
+Solution? Topological sort — given a digraph put vertices in order such that all of its directed edges point from a vertex earlier in the order to a vertex later in the order (or report that it's not possible).
+
+#### Cycles in Digraphs
+
+If a cycle exists in a Directed Graph, we need to check for it in order for precedence constraint scheduling to be possible. That is, the graph must be a directed acyclic graph (DAG). In order to do this, we use DFS but maintain an `onStack` array. If we encounter a vertex and it's already on the stack, then a cycle exists.
+
+#### Depth-first orders and Topological Sort
+
+Using DFS (visits every vertex exactly once), we can perform a topological sort by maintaining the list of vertices visited in a data structure. There are three types of orderings:
+
+* Preorder — put vertex on queue before recursive call
+* Postorder — put vertex on a queue after recursive call
+* Reverse postorder — put vertex on stack after recursive call.
+
+
+
+Reverse postorder is a topological sort since there are three cases when `dfs(v)` is called for any edge $v\rarr w$ in a graph.
+
+* $w$ has been marked.
+* $w$ has not been marked, so $v \rarr w$ will cause `dfs(w)` to be called and return either directly or indirectly before `dfs(v)` returns.
+* `dfs(w)` has been called and has not yet returned when `dfs(v)` is called. This is impossible in a DAG because the recursive call chain implies a path from $w$ to $v$ and the edge $v \rarr w$ completes the cycle, i.e, if $w$ has not returned when $v$ is checked, then that means $v$ and $w$ are connected through other means!
+
+In the other two cases, $w$ finishes before $v$ so it appear after $v$ in reverse postorder. Thus, each edge $v \rarr w$ points from a vertex earlier in the order to a vertex later in the order as desired. Takes time proportional to $E+V$.
+
+### Strong connectivity between digraphs
+
+A pair of vertices $v$ and $w$ are strongly connected if there is a path from $v$ to $w$ and vice versa. A digraph is strongly connected if all vertices are strongly connected. Two vertices are strongly connected if and only if there exists a general directed cycle that contains both of them.
+
+### Kosaraju-Sharir algorithm
+
+Algorithm:
+
+* Given digraph $G$, use $DFS$ to compute reverse postorder of its reverse digraph $G^R$.
+* Run standard $DFS$ on $G$, but consider the unmarked vertices in order just computed instead of standard numerical order. All vertices visited on a call to $DFS$ are a strong component.
+
+The algorithm is correct due to the following: consider the kernal DAG (condensation digraph) formed by collapsing all vertices in each strong component to a single vertex (and removing self loops). The result is still a DAG. The algorithm identifies strong components in reverse topological order of kernal DAG. It begins by finding a vertex that is in a sink component of kernel DAG (no edges pointing from it). It visits that sink component, marking all the vertices inside it with DFS, removing them from the digraph. It then finds the next sink component, and does the same until it's visited all sink components. In essence, the graph is first topologically sorted in reverse so that later vertices come first and earlier ones come later. Then, using DFS again, the later vertices are marked first (meaning everything pointing to it is also marked) so as to determine connected components. All of this takes time proportional to $E+V$.
+

@@ -3,11 +3,7 @@
  * @Date:   2020-03-25T19:52:21-05:00
  * @Email:  silentcat@protonmail.com
  * @Last modified by:   simulacr4m
-<<<<<<< HEAD
- * @Last modified time: 2020-04-05T21:14:08-05:00
-=======
- * @Last modified time: 2020-04-05T21:14:08-05:00
->>>>>>> master
+ * @Last modified time: 2020-04-05T11:58:21-05:00
  */
 
 import edu.princeton.cs.algs4.Bag;
