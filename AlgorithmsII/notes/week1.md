@@ -208,5 +208,36 @@ Solution? Topological sort — given a digraph put vertices in order such that a
 
 #### Cycles in Digraphs
 
-If a cycle exists in a Directed Graph, we need to check for it in order for precedence constraint scheduling to be possible. That is, the graph must be a directed acyclic graph (DAG). 
+If a cycle exists in a Directed Graph, we need to check for it in order for precedence constraint scheduling to be possible. That is, the graph must be a directed acyclic graph (DAG). In order to do this, we use DFS but maintain an `onStack` array. If we encounter a vertex and it's already on the stack, then a cycle exists.
+
+#### Depth-first orders and Topological Sort
+
+Using DFS (visits every vertex exactly once), we can perform a topological sort by maintaining the list of vertices visited in a data structure. There are three types of orderings:
+
+* Preorder — put vertex on queue before recursive call
+* Postorder — put vertex on a queue after recursive call
+* Reverse postorder — put vertex on stack after recursive call.
+
+
+
+Reverse postorder is a topological sort since there are three cases when `dfs(v)` is called for any edge $v\rarr w$ in a graph.
+
+* $w$ has been marked.
+* $w$ has not been marked, so $v \rarr w$ will cause `dfs(w)` to be called and return either directly or indirectly before `dfs(v)` returns.
+* `dfs(w)` has been called and has not yet returned when `dfs(v)` is called. This is impossible in a DAG because the recursive call chain implies a path from $w$ to $v$ and the edge $v \rarr w$ completes the cycle, i.e, if $w$ has not returned when $v$ is checked, then that means $v$ and $w$ are connected through other means!
+
+In the other two cases, $w$ finishes before $v$ so it appear after $v$ in reverse postorder. Thus, each edge $v \rarr w$ points from a vertex earlier in the order to a vertex later in the order as desired. Takes time proportional to $E+V$.
+
+### Strong connectivity between digraphs
+
+A pair of vertices $v$ and $w$ are strongly connected if there is a path from $v$ to $w$ and vice versa. A digraph is strongly connected if all vertices are strongly connected. Two vertices are strongly connected if and only if there exists a general directed cycle that contains both of them.
+
+### Kosaraju-Sharir algorithm
+
+Algorithm:
+
+* Given digraph $G$, use $DFS$ to compute reverse postorder of its reverse digraph $G^R$.
+* Run standard $DFS$ on $G$, but consider the unmarked vertices in order just computed instead of standard numerical order. All vertices visited on a call to $DFS$ are a strong component.
+
+The algorithm is correct due to the following: consider the kernal DAG (condensation digraph) formed by collapsing all vertices in each strong component to a single vertex (and removing self loops). The result is still a DAG. The algorithm identifies strong components in reverse topological order of kernal DAG. It begins by finding a vertex that is in a sink component of kernel DAG (no edges pointing from it). It visits that sink component, marking all the vertices inside it with DFS, removing them from the digraph. It then finds the next sink component, and does the same until it's visited all sink components. In essence, the graph is first topologically sorted in reverse so that later vertices come first and earlier ones come later. Then, using DFS again, the later vertices are marked first (meaning everything pointing to it is also marked) so as to determine connected components. All of this takes time proportional to $E+V$.
 
