@@ -184,6 +184,29 @@ public class Digraph
 
 Adjacency list 
 
-## Reverse of Digraph
+#### Reverse of Digraph
 
 Returns a copy of the digraph with all edges reversed (allows clients to find edges that point to each vertex while `adj()` gives just vertices connected by edges that point *from* each vertex.
+
+### Reachability in Digraphs
+
+Depth First Search can still be used. Takes time proportional to sum of outdegree of all vertices.
+
+
+
+### Applications
+
+Mark and sweep garbage collection — Using DFS, we can mark the set of objects that are accessible. Objects are are unmarked can be returned to memory.
+
+Finding paths in Digraphs — shortest path can be found with Breadth-First search and paths in general can be found with DFS
+
+### Cycles and DAGs
+
+Scheduling problems often apply Digraphs. This involves arranging for the completion of set of jobs under a set of constraints. The most important type of constraint is precedence constraints, where certain jobs must be performed before others. Precedence-constrained scheduling — given a set of jobs to be completed, with precedence constraints that specify that certain jobs have to be completed before certain other jobs are begun, how can we schedule jobs such that all are completed with the required constraints?
+
+Solution? Topological sort — given a digraph put vertices in order such that all of its directed edges point from a vertex earlier in the order to a vertex later in the order (or report that it's not possible).
+
+#### Cycles in Digraphs
+
+If a cycle exists in a Directed Graph, we need to check for it in order for precedence constraint scheduling to be possible. That is, the graph must be a directed acyclic graph (DAG). 
+
