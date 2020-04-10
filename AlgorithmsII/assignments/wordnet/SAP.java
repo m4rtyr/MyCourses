@@ -3,7 +3,7 @@
  * @Date:   2020-04-07T15:27:01-05:00
  * @Email:  silentcat@protonmail.com
  * @Last modified by:   simulacr4m
- * @Last modified time: 2020-04-10T11:27:36-05:00
+ * @Last modified time: 2020-04-10T16:45:57-05:00
  */
 
 import edu.princeton.cs.algs4.Digraph;
@@ -59,35 +59,31 @@ public class SAP {
   public int length(Iterable<Integer> v, Iterable<Integer> w) {
     if (v == null || w == null)
       throw new IllegalArgumentException();
-    for (int x : v)
-      if (!inBounds(x))
+    for (Integer x : v)
+      if (x == null || !inBounds(x))
         throw new IllegalArgumentException();
-    for (int y : w)
-      if (!inBounds(y))
+    for (Integer y : w)
+      if (y == null || !inBounds(y))
         throw new IllegalArgumentException();
-    int min = Integer.MAX_VALUE, ancestor = -1;
-    BreadthFirstDirectedPaths bv = new BreadthFirstDirectedPaths(G, v);
-    BreadthFirstDirectedPaths bw = new BreadthFirstDirectedPaths(G, w);
-    for (int i = 0; i < G.V(); i++) {
-      if (bv.hasPathTo(i) && bw.hasPathTo(i)) {
-        int length = bv.distTo(i) + bw.distTo(i);
-        if (min > length) {
-          ancestor = -1;
-          min = length;
-        }
+    int minLen = -1;
+    for (int x : v) {
+      for (int y : w) {
+        int len = length(x, y);
+        if (minLen > len || minLen == -1)
+          minLen = len;
       }
     }
-    return (ancestor == -1) ? -1 : min;
+    return minLen;
   }
 
   public int ancestor(Iterable<Integer> v, Iterable<Integer> w) {
     if (v == null || w == null)
       throw new IllegalArgumentException();
-    for (int x : v)
-      if (!inBounds(x))
+    for (Integer x : v)
+      if (x == null || !inBounds(x))
         throw new IllegalArgumentException();
-    for (int y : w)
-      if (!inBounds(y))
+    for (Integer y : w)
+      if (y == null || !inBounds(y))
         throw new IllegalArgumentException();
     int minAn = -1, minLen = -1;
     for (int x : v) {
