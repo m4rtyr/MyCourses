@@ -3,7 +3,7 @@
  * @Date:   2020-04-07T15:27:01-05:00
  * @Email:  silentcat@protonmail.com
  * @Last modified by:   simulacr4m
- * @Last modified time: 2020-04-10T16:45:57-05:00
+ * @Last modified time: 2020-04-10T17:21:11-05:00
  */
 
 import edu.princeton.cs.algs4.Digraph;
@@ -65,12 +65,14 @@ public class SAP {
     for (Integer y : w)
       if (y == null || !inBounds(y))
         throw new IllegalArgumentException();
-    int minLen = -1;
-    for (int x : v) {
-      for (int y : w) {
-        int len = length(x, y);
-        if (minLen > len || minLen == -1)
-          minLen = len;
+    int minLen = -1, ancestor = -1;
+    BreadthFirstDirectedPaths bv = new BreadthFirstDirectedPaths(G, v);
+    BreadthFirstDirectedPaths bw = new BreadthFirstDirectedPaths(G, w);
+    for (int i = 0; i < G.V(); i++) {
+      if (bv.hasPathTo(i) && bw.hasPathTo(i)) {
+        int length = bv.distTo(i) + bw.distTo(i);
+        if (minLen > length || minLen == -1)
+          minLen = length;
       }
     }
     return minLen;
@@ -85,17 +87,19 @@ public class SAP {
     for (Integer y : w)
       if (y == null || !inBounds(y))
         throw new IllegalArgumentException();
-    int minAn = -1, minLen = -1;
-    for (int x : v) {
-      for (int y : w) {
-        int[] tuple = sap(x, y);
-        if (minLen > tuple[1] || minLen == -1) {
-          minAn = tuple[0];
-          minLen = tuple[1];
+    int minLen = -1, ancestor = -1;
+    BreadthFirstDirectedPaths bv = new BreadthFirstDirectedPaths(G, v);
+    BreadthFirstDirectedPaths bw = new BreadthFirstDirectedPaths(G, w);
+    for (int i = 0; i < G.V(); i++) {
+      if (bv.hasPathTo(i) && bw.hasPathTo(i)) {
+        int length = bv.distTo(i) + bw.distTo(i);
+        if (minLen > length || minLen == -1) {
+          ancestor = i;
+          minLen = length;
         }
       }
     }
-    return minAn;
+    return ancestor;
   }
 
   public static void main(String[] args) {
