@@ -112,5 +112,45 @@ A shortest path in an edge-weighted digraph is a directed path between two verti
 * Shortest paths are normally simple
 * Shortest paths are not necessarily unique
 * Parallel edges and self-loops may be present
+* Negative weights introduce complications
 
-### 
+## Shortest Path Tree
+
+Single-source shortest paths problem — given a source vertex, the result of the computation is a tree known as the shortest-paths tree, which gives a shortest path from $s$ to every other vertex reachable from $s$.
+
+## Edge-weighted Digraph Data Types
+
+```java
+public class DirectedEdge
+	DirectedEdge(int v, int w, double weight)
+  double weight()														// Weight of edge
+  int from()																// Vertex edge points from
+  int to()																	// Vertex edge points to
+  String toString()													// String representation
+  
+public class EdgeWeightedDigraph
+  EdgeWeightedDigraph(int V)			 	// create a h w/ 0 edges and V vertex
+  EdgeWeightedDigraph(In in)			  // create a digraph from input in
+  int V()													  // Number of vertices
+  int E()													  // Number of edges
+  void addEdge(DirectedEdge e)		  // add edge e to this digraph
+  Iterable<DirectedEdge> adj(int v) // all edges leaving vertex v
+  Iterable<DirectedEdge> edges()		// all edges in this digraph
+  String toString()									// string representation
+```
+
+## Shortest paths API
+
+Same paradigm as DFS and BFS API.
+
+Data structures for shortest paths:
+
+* Edges on the shortest-paths tree — edgeTo array
+* Distance to Source represented with distTo array
+
+### Edge Relaxation
+
+To *relax* an edge `v->w` means to test whether the best known way from $s$ to $w$ is to go from $s$ to $v$, then take the edge from $v$ to $w$. Vertex relaxation is the same principle where we iterate through a vertex's edges and determine if the path to some other vertex $w$ can be relaxed.
+
+
+
