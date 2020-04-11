@@ -60,3 +60,57 @@ public class EdgeWeightedGraph
   String toString()									// string representation
 ```
 
+## MST API and Test Client
+
+The following is an API for MSTs:
+
+```java
+public class MST
+  MST(EdgeWeightedGraph G)			// constructor
+  Iterable<Edge> edges()				// all of the MST edges
+  double weight()								// weight of MST
+```
+
+
+
+## Prim's Algorithm
+
+Prim's algorithm: attaches a new edge to a single edge growing tree at each step. Start w/ any vertex as a single-vertex tree. Then add $V-1$ edges to it, always taking next the minimum weight edge that connects a vertex on the tree to one that is not on the tree. In accordance with the greedy algorithm, Prim's algorithm takes the crossing edge of minimal weight.
+
+The main problem: how to efficiently find crossing edge of minimal weight? Crossing edges are placed in a minimal priority queue that compares edges by weight.
+
+### Maintaining set of crossing edges
+
+Each time an edge is added to the tree, the vertex that is connected by that edge is added. To maintain the set of crossing edges, we need to add priority queue all edges from that vertex to any non-tree vertex (marked array to identify whether vertex is in tree or not). Any edge connecting the vertex just added to a tree vertex that is already on the priority queue becomes ineligible because it connects two tree vertices. 
+
+There are two ways to deal with the eligibility: a lazy implementation vs an eager implementation. 
+
+### Performance 
+
+Prim's algorithm takes time proportional to $E \log E$ in the worst case where $E$ is the # of edges (insertion/deletion cost is proportional to $\log E$ (for the lazy version).
+
+Prim's algorithm takes time proportional to $E \log V$ in the worst case where $E$ is the # of edges and $V$ is the number of vertices.
+
+## Kruskal's Algorithm
+
+Kruskal's algorithm: Takes edges in order of weight value, taking for MST each edge that doesn't form a cycle with edges previously added, stopping after adding $V-1$ edges. This computes the MST since the edges added are crossing edges, and they are the crossing edges of minimal weight.
+
+### Performance
+
+Kruskal's algorithm uses space proportional to $E$ and time proportional to $E \log E$ to compute the MST.
+
+# Shortest Paths
+
+A shortest path in an edge-weighted digraph is a directed path between two vertices with the lowest weight of all alternate paths.
+
+## Properties of Shortest Paths
+
+* Paths are directed
+* Weights are not necessarily distances
+* Unreachable vertices might exist
+* Paths can repeat vertices and edges
+* Shortest paths are normally simple
+* Shortest paths are not necessarily unique
+* Parallel edges and self-loops may be present
+
+### 
