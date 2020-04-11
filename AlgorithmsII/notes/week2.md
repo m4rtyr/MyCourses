@@ -152,5 +152,29 @@ Data structures for shortest paths:
 
 To *relax* an edge `v->w` means to test whether the best known way from $s$ to $w$ is to go from $s$ to $v$, then take the edge from $v$ to $w$. Vertex relaxation is the same principle where we iterate through a vertex's edges and determine if the path to some other vertex $w$ can be relaxed.
 
+## Theoretical Basis for Shortest Path Algorithms
 
+Optimality conditions — The values of distTo[v] for some vertex v in an edge-weighted digraph G is the shorest path iff `distTo[s] = 0`, `distTo[w] <= distTo[v].+ e.weight()` for each edge $e$ from $v$ to $w$.
+
+See book for Proof.
+
+The optimality conditions lead to a generic algorithm: initialize `distTo[s] = 0` and all other `distTo[]` values to infinity and relax any edge in $G$ continuing until no edge is eligible. For any vertex $w$ reachable from $s$, some edge on the shortest path to $w$ is eligible as long as `distTo[w]` remains infinite, so the algorithm continues until the `distTo[]` value of each vertex reachable from $s$ is the length of some path to that vertex. For any vertex $v$ for which the shorest path is well-defined, the algorithm causes `distTo[v]` is the length of some simple path from $s$ to $v$ and is strictly monotonically decreasing.
+
+## Dijkstra's Algorithm
+
+`distTo[s]` is initialized to zero and other entries are initialized to positive infinity. We relax and add to the tree a non-tree vertex with the lowest `distTo[]` value continuing until all vertices are on the tree or no non-tree vertex has a finite `distTo[]` value.
+
+If $v$ is reachable from the source, every `v->w` edge is relaxed exactly once. When $v$ is relaxed, it leaves `dist[w] <= distTo[v] + e.weight()` This inequality holds until the algorithm completes since `distTo[w]` can only decrease and `distTo[v]` never changes. Therefore, the optimality conditions are maintained. An indexed priority queue allows for priorities of keys (edge weights) to be changed.
+
+Dijkstra's algorithm can also be used for edge-weighted undirected graphs (convert the graph to a directed graph by having a directed edge pointing from $v$ to $w$ and another edge that points from $w$ to $v$).
+
+## Acyclic Edge-Weighted Digraphs
+
+By relaxing vertices in **topological order**, we can solve the single-source shorest paths problem for edge-weighted DAGs in time proportional to $E+V$.
+
+*Proof*
+
+Every edge `v->w` is relaxed exactly once. The inequality `distTo[w] = distTo[v] + e.weight()` until the algorithm completes since `distTo[v]` never changes (the topological order means that no edge entering $v$ will be processed after $v$ is relaxed). `distTo[w]` can only decrease. So, when all vertices reachable from $s$ have been added to tree, the optimality conditions hold. Topological sorting takes time proportional to $E + V$ and the relaxation of each edge takes time proportional to $E + V$.
+
+Finding the longest path can be solved. Make a copy of the DAG and negate all edge weights. This causes the shortest path in the copy to be the longest path in the original. This is also done in time proportional to $E + V$.
 
