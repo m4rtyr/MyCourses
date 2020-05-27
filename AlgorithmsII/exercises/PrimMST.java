@@ -26,6 +26,7 @@ public class PrimMST {
       if (marked[v] && marked[w])
         continue;
 
+      /* The bottom should be done for each unmarked vertex. */
       int p = !marked[v] ? v : w;
       marked[p] = true;
       for (Edge e : G.adj(p))
