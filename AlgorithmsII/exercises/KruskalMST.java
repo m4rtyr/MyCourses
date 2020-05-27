@@ -19,7 +19,7 @@ public class KruskalMST {
     for (Edge e : G.edges())
       priorityQueue.insert(e);
 
-    while (!priorityQueue.isEmpty()) {
+    while (!priorityQueue.isEmpty()) { // Add condition to check that mst holds only V-1 vertices
       Edge e = priorityQueue.delMin();
       int v = e.either(), w = e.other(v);
       if (uf.find(v) == uf.find(w))
