@@ -1,20 +1,22 @@
 import java.awt.Color;
 import edu.princeton.cs.algs4.Picture;
-import edu.princeton.cs.algs4.EdgeWeightedDigraph;
-import edu.princeton.cs.algs4.DirectedEdge;
+import edu.princeton.cs.algs4.Stack;
+import edu.princeton.cs.algs4.Queue;
 import edu.princeton.cs.algs4.StdOut;
-import edu.princeton.cs.algs4.AcyclicSP;
 
 public class SeamCarver {
 
+  private int width;
+  private int height;
+  private boolean switched;
+  private int[][] pixels;
+  private double[][] energy;
   private Picture picture;
-  private EdgeWeightedDigraph VERTICAL;
-  private EdgeWeightedDigraph HORIZONTAL;
 
   private final int TOP;
   private final int BOTTOM;
-  private final int LEFT;
-  private final int RIGHT;
+
+  /* Energy Helping Functions */
 
   private int computeDifferences(int x1, int y1, int x2, int y2) {
     Color A = picture.get(x1, y1);
@@ -26,109 +28,159 @@ public class SeamCarver {
     return red*red + green*green + blue*blue;
   }
 
+  private double computeEnergy(int x, int y) {
+    if (x == 0 || x == width-1 || y == 0 || y == height-1)
+      return 1000.0;
+    int deltaX = computeDifferences(x-1, y, x+1, y);
+    int deltaY = computeDifferences(x, y-1, x, y+1);
+    return Math.sqrt(deltaX + deltaY);
+  }
+
+  /* General Helper Functions */
+
   private boolean checkBounds(int x, int y) {
-    return x >= 0 && x < picture.width() && y >= 0 && y < picture.height();
+    return x >= 0 && x < width && y >= 0 && y < height;
   }
 
   private int convert1D(int x, int y) {
-    return y*picture.width() + x;
+    return y*width + x;
   }
 
   private int[] convert2D(int c) {
     int[] coords = new int[2];
 
-    int y = c / picture.width();
-    int x = c - y*picture.width();
+    int y = c / width;
+    int x = c - y*width;
 
     coords[0] = x;
     coords[1] = y;
     return coords;
   }
 
-  private double[][] getNeighborsVertical(int x, int y) {
-    int i = 0;
-    double[][] neighbors = new double[3][2];
-    for (int k = 0; k < neighbors.length; k++)
-      neighbors[k][0] = -1;
-    if (checkBounds(x, y+1)) {
-      neighbors[i][0] = (double) convert1D(x, y+1);
-      neighbors[i++][1] = energy(x, y+1);
+  private Queue<Integer> getNeighbors(int v) {
+    Queue<Integer> neighbors = new Queue<Integer>();
+    if (v == TOP || v == BOTTOM) {
+      if (v == TOP) {
+        for (int x = 0; x < width; x++)
+          neighbors.enqueue(convert1D(x, 0));
+      }
+      return neighbors;
     }
-    if (checkBounds(x-1, y+1)) {
-      neighbors[i][0] = (double) convert1D(x-1, y+1);
-      neighbors[i++][1] = energy(x-1, y+1);
+    int[] coords = convert2D(v);
+    int x = coords[0], y = coords[1];
+    if (y == height-1) {
+      neighbors.enqueue(BOTTOM);
+      return neighbors;
     }
-    if (checkBounds(x+1, y+1)) {
-      neighbors[i][0] = (double) convert1D(x+1, y+1);
-      neighbors[i++][1] = energy(x+1, y+1);
-    }
+    if (checkBounds(x, y+1))
+      neighbors.enqueue(convert1D(x, y+1));
+    if (checkBounds(x-1, y+1))
+      neighbors.enqueue(convert1D(x-1, y+1));
+    if (checkBounds(x+1, y+1))
+      neighbors.enqueue(convert1D(x+1, y+1));
     return neighbors;
   }
 
-  private double[][] getNeighborsHorizontal(int x, int y) {
-    int i = 0;
-    double[][] neighbors = new double[3][2];
-    for (int k = 0; k < neighbors.length; k++)
-      neighbors[k][0] = -1;
-    if (checkBounds(x+1, y)) {
-      neighbors[i][0] = (double) convert1D(x+1, y);
-      neighbors[i++][1] = energy(x+1, y);
+  /* DFS/Topological implementation */
+
+  private class LittleDFS {
+
+    private boolean[] marked;
+    private Stack<Integer> reversePost;
+
+    public LittleDFS() {
+      reversePost = new Stack<Integer>();
+      marked = new boolean[width*height+2];
+      dfs(TOP);
     }
-    if (checkBounds(x+1, y-1)) {
-      neighbors[i][0] = (double) convert1D(x+1, y-1);
-      neighbors[i++][1] = energy(x+1, y-1);
+
+    private void dfs(int v) {
+      marked[v] = true;
+      for (int w : getNeighbors(v)) {
+        if (!marked[w]) dfs(w);
+      }
+      reversePost.push(v);
     }
-    if (checkBounds(x+1, y+1)) {
-      neighbors[i][0] = (double) convert1D(x+1, y+1);
-      neighbors[i++][1] = energy(x+1, y+1);
+
+    public Iterable<Integer> reversePostorder() {
+      return reversePost;
     }
-    return neighbors;
   }
+
+  private class LittleAcyclicSP {
+
+    private int[] edgeTo;
+    private double[] distTo;
+
+    public LittleAcyclicSP() {
+      edgeTo = new int[width*height+2];
+      distTo = new double[width*height+2];
+
+      for (int v = 0; v < distTo.length; v++)
+        distTo[v] = Double.POSITIVE_INFINITY;
+      distTo[TOP] = 0.0;
+      LittleDFS order = new LittleDFS();
+      for (int v : order.reversePostorder()) {
+        relax(v);
+      }
+    }
+
+    public Iterable<Integer> pathToBottom() {
+      Stack<Integer> path = new Stack<Integer>();
+      for (int x = edgeTo[BOTTOM]; x != TOP; x = edgeTo[x])
+        path.push(x);
+      return path;
+    }
+
+    private double getWeight(int v, int w) {
+      if (v == TOP || w == BOTTOM)
+        return 1000.0;
+      int[] vcoords = convert2D(v);
+      int[] wcoords = convert2D(w);
+      if (switched) {
+        int tmp = vcoords[0];
+        vcoords[0] = vcoords[1];
+        vcoords[1] = tmp;
+        tmp = wcoords[0];
+        wcoords[0] = wcoords[1];
+        wcoords[1] = tmp;
+      }
+      double venergy = energy[vcoords[0]][vcoords[1]];
+      double wenergy = energy[wcoords[0]][wcoords[1]];
+      return venergy + wenergy;
+    }
+
+    private void relax(int v) {
+      for (int w : getNeighbors(v)) {
+        double weight = distTo[v] + getWeight(v, w);
+        if (distTo[w] > weight) {
+          distTo[w] = weight;
+          edgeTo[w] = v;
+        }
+      }
+    }
+  }
+
+  /* API code */
 
   public SeamCarver(Picture picture) {
     if (picture == null)
       throw new IllegalArgumentException();
     this.picture = new Picture(picture);
-    VERTICAL = new EdgeWeightedDigraph(picture.width()*picture.height()+2);
-    HORIZONTAL = new EdgeWeightedDigraph(picture.width()*picture.height()+2);
+    this.width = picture.width();
+    this.height = picture.height();
+    pixels = new int[width][height];
+    energy = new double[width][height];
 
-    int lastPixel = convert1D(picture.width()-1, picture.height()-1);
-    TOP = lastPixel+1;
-    BOTTOM = lastPixel+2;
-    LEFT = TOP;
-    RIGHT = BOTTOM;
-
-    for (int y = 0; y < picture.height(); y++) {
-      for (int x = 0; x < picture.width(); x++) {
-        int root = convert1D(x, y);
-        double rootEnergy = energy(x, y);
-        double[][] vertNeighbors = getNeighborsVertical(x, y);
-        double[][] horNeighbors = getNeighborsHorizontal(x, y);
-        for (int i = 0; i < vertNeighbors.length; i++) {
-          if (vertNeighbors[i][0] >= 0) {
-            DirectedEdge e = new DirectedEdge(root, (int)vertNeighbors[i][0], rootEnergy + vertNeighbors[i][1]);
-            VERTICAL.addEdge(e);
-          }
-        }
-
-        for (int i = 0; i < horNeighbors.length; i++) {
-          if (horNeighbors[i][0] >= 0) {
-            DirectedEdge e = new DirectedEdge(root, (int)horNeighbors[i][0], rootEnergy + horNeighbors[i][1]);
-            HORIZONTAL.addEdge(e);
-          }
-        }
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        pixels[x][y] = picture.getRGB(x, y);
+        energy[x][y] = computeEnergy(x, y);
       }
     }
-
-    for (int x = 0; x < picture.width(); x++) {
-      VERTICAL.addEdge(new DirectedEdge(TOP, convert1D(x, 0), 0.0));
-      VERTICAL.addEdge(new DirectedEdge(convert1D(x, picture.height()-1), BOTTOM, 0.0));
-    }
-
-    for (int y = 0; y < picture.height(); y++) {
-      HORIZONTAL.addEdge(new DirectedEdge(LEFT, convert1D(0, y), 0.0));
-      HORIZONTAL.addEdge(new DirectedEdge(convert1D(picture.width()-1, y), RIGHT, 0.0));
-    }
+    switched = false;
+    TOP = width*height;
+    BOTTOM = width*height+1;
   }
 
   public Picture picture() {
@@ -136,46 +188,43 @@ public class SeamCarver {
   }
 
   public int width() {
-    return picture.width();
+    return width;
   }
 
   public int height() {
-    return picture.height();
+    return height;
   }
 
   public double energy(int x, int y) {
     if (!checkBounds(x, y))
       throw new IllegalArgumentException();
-    if (x == 0 || x == picture.width()-1 || y == 0 || y == picture.height()-1)
-      return 1000.0;
-    int deltaX = computeDifferences(x-1, y, x+1, y);
-    int deltaY = computeDifferences(x, y-1, x, y+1);
-    return Math.sqrt(deltaX + deltaY);
+    return energy[x][y];
   }
 
   public int[] findHorizontalSeam() {
-    int[] seam = new int[picture.width()];
-    AcyclicSP sp = new AcyclicSP(HORIZONTAL, LEFT);
-    int i = 0;
-    for (DirectedEdge e : sp.pathTo(RIGHT)) {
-      if (e.to() == RIGHT)
-        break;
-      int[] coords = convert2D(e.to());
-      seam[i++] = coords[1]; // the y coordinate
-    }
+
+    int w = width;
+    int h = height;
+
+    width = height;
+    height = w;
+    switched = true;
+    int[] seam = findVerticalSeam();
+    width = w;
+    height = h;
+    switched = false;
     return seam;
   }
 
   public int[] findVerticalSeam() {
-    int[] seam = new int[picture.height()];
-    AcyclicSP sp = new AcyclicSP(VERTICAL, TOP);
+    int[] seam = new int[height];
+    LittleAcyclicSP sp = new LittleAcyclicSP();
+    Stack<Integer> s = (Stack<Integer>) sp.pathToBottom();
 
     int i = 0;
-    for (DirectedEdge e : sp.pathTo(BOTTOM)) {
-      if (e.to() == BOTTOM)
-        break;
-      int[] coords = convert2D(e.to());
-      seam[i++] = coords[0]; // the x coordinate
+    for (int v : s) {
+      int[] coords = convert2D(v);
+      seam[i++] = coords[0];
     }
     return seam;
   }
@@ -194,7 +243,6 @@ public class SeamCarver {
     int i = 0;
     for (int x : s.findVerticalSeam())
       StdOut.printf("%d, %d\n", x, i++);
-
     i = 0;
     for (int y : s.findHorizontalSeam())
       StdOut.printf("%d, %d\n", i++, y);
