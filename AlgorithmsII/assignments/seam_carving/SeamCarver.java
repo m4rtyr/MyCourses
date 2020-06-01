@@ -9,16 +9,107 @@ public class SeamCarver {
   private int width;
   private int height;
   private boolean switched;
-  private int[][] pixels;
-  private double[][] energy;
   private Picture picture;
+  private double[][] energy;
+  private int[][] pixels;
 
   private final int TOP;
   private final int BOTTOM;
 
-  /* Energy Helping Functions */
+  public SeamCarver(Picture picture) {
+    this.width = picture.width();
+    this.height = picture.height();
+    this.picture = new Picture(picture);
+    switched = false;
+    energy = new double[width][height];
+    pixels = new int[width][height];
+    TOP = width*height;
+    BOTTOM = width*height+1;
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        energy[x][y] = computeEnergy(x, y);
+        pixels[x][y] = picture.getRGB(x, y);
+      }
+    }
+  }
 
-  private int computeDifferences(int x1, int y1, int x2, int y2) {
+  public Picture picture() {
+    Picture p = new Picture(width, height);
+    for (int y = 0; y < height; y++) {
+      for (int x = 0; x < width; x++) {
+        if (pixels[x][y] != -1)
+          p.setRGB(x, y, pixels[x][y]);
+      }
+    }
+    return p;
+  }
+
+  public int width() { return width; }
+  public int height() { return height; }
+
+  public double energy(int x, int y) {
+    if (!checkBounds(x, y))
+      throw new IllegalArgumentException();
+    return energy[x][y];
+  }
+
+  public int[] findHorizontalSeam() {
+    int w = width;
+    int h = height;
+
+    width = height;
+    height = w;
+    switched = true;
+    int[] seam = findVerticalSeam();
+    switched = false;
+    width = w;
+    height = h;
+    return seam;
+  }
+
+  public int[] findVerticalSeam() {
+    int i = 0;
+    int[] seam = new int[height];
+    for (int v : computePath()) {
+      int[] coords = convert2D(v);
+      seam[i++] = coords[0];
+    }
+    return seam;
+  }
+
+  public void removeHorizontalSeam(int[] seam) {
+    for (int i = 0; i < seam.length; i++)
+      pixels[i][seam[i]] = -1;
+  }
+
+  public void removeVerticalSeam(int[] seam) {
+    for (int i = 0; i < seam.length; i++)
+      pixels[seam[i]][i] = -1;
+  }
+
+  public static void main(String[] args) {
+    SeamCarver s = new SeamCarver(new Picture(args[0]));
+    StdOut.println(s.energy(1, 2));
+  }
+
+  private boolean checkBounds(int x, int y) {
+    return x >= 0 && x < width && y >= 0 && y < height;
+  }
+
+  private int convert1D(int x, int y) {
+    return y*width + x;
+  }
+
+  private int[] convert2D(int v) {
+    int[] coords = new int[2];
+    int y = v / width;
+    int x = v - y*width;
+    coords[0] = x;
+    coords[1] = y;
+    return coords;
+  }
+
+  private double computeDelta(int x1, int y1, int x2, int y2) {
     Color A = picture.get(x1, y1);
     Color B = picture.get(x2, y2);
 
@@ -31,39 +122,62 @@ public class SeamCarver {
   private double computeEnergy(int x, int y) {
     if (x == 0 || x == width-1 || y == 0 || y == height-1)
       return 1000.0;
-    int deltaX = computeDifferences(x-1, y, x+1, y);
-    int deltaY = computeDifferences(x, y-1, x, y+1);
+    double deltaX = computeDelta(x-1, y, x+1, y);
+    double deltaY = computeDelta(x, y-1, x, y+1);
     return Math.sqrt(deltaX + deltaY);
   }
 
-  /* General Helper Functions */
+  private Stack<Integer> computePath() {
+    double[] dist = new double[width*height+2];
+    int[] edgeTo = new int[width*height+2];
+    for (int i = 0; i < dist.length; i++)
+      dist[i] = Double.POSITIVE_INFINITY;
+    dist[TOP] = 0.0;
+    for (int v : topologicalSort()) {
+      for (int w : getNeighbors(v)) {
+        if (dist[w] > dist[v] + getWeight(v, w)) {
+          dist[w] = dist[v] + getWeight(v, w);
+          edgeTo[w] = v;
+        }
+      }
+    }
 
-  private boolean checkBounds(int x, int y) {
-    return x >= 0 && x < width && y >= 0 && y < height;
+    Stack<Integer> path = new Stack<Integer>();
+    for (int x = edgeTo[BOTTOM]; x != TOP; x = edgeTo[x])
+      path.push(x);
+    return path;
   }
 
-  private int convert1D(int x, int y) {
-    return y*width + x;
+  private double getWeight(int v, int w) {
+    if (v == TOP || w == BOTTOM)
+      return 1000.0;
+    int[] vcoords = convert2D(v);
+    int[] wcoords = convert2D(w);
+
+    double venergy = !switched ? energy[vcoords[0]][vcoords[1]] : energy[vcoords[1]][vcoords[0]];
+    double wenergy = !switched ? energy[wcoords[0]][wcoords[1]] : energy[wcoords[1]][wcoords[0]];
+    return venergy + wenergy;
   }
 
-  private int[] convert2D(int c) {
-    int[] coords = new int[2];
+  private Stack<Integer> topologicalSort() {
+    Stack<Integer> reversePost = new Stack<Integer>();
+    boolean[] marked = new boolean[width*height+2];
+    dfs(marked, reversePost, TOP);
+    return reversePost;
+  }
 
-    int y = c / width;
-    int x = c - y*width;
-
-    coords[0] = x;
-    coords[1] = y;
-    return coords;
+  private void dfs(boolean[] marked, Stack<Integer> s, int v) {
+    marked[v] = true;
+    for (int w : getNeighbors(v))
+      if (!marked[w]) dfs(marked, s, w);
+    s.push(v);
   }
 
   private Queue<Integer> getNeighbors(int v) {
     Queue<Integer> neighbors = new Queue<Integer>();
-    if (v == TOP || v == BOTTOM) {
-      if (v == TOP) {
-        for (int x = 0; x < width; x++)
-          neighbors.enqueue(convert1D(x, 0));
-      }
+    if (v == TOP) {
+      for (int x = 0; x < width; x++)
+        neighbors.enqueue(convert1D(x, 0));
       return neighbors;
     }
     int[] coords = convert2D(v);
@@ -81,170 +195,4 @@ public class SeamCarver {
     return neighbors;
   }
 
-  /* DFS/Topological implementation */
-
-  private class LittleDFS {
-
-    private boolean[] marked;
-    private Stack<Integer> reversePost;
-
-    public LittleDFS() {
-      reversePost = new Stack<Integer>();
-      marked = new boolean[width*height+2];
-      dfs(TOP);
-    }
-
-    private void dfs(int v) {
-      marked[v] = true;
-      for (int w : getNeighbors(v)) {
-        if (!marked[w]) dfs(w);
-      }
-      reversePost.push(v);
-    }
-
-    public Iterable<Integer> reversePostorder() {
-      return reversePost;
-    }
-  }
-
-  private class LittleAcyclicSP {
-
-    private int[] edgeTo;
-    private double[] distTo;
-
-    public LittleAcyclicSP() {
-      edgeTo = new int[width*height+2];
-      distTo = new double[width*height+2];
-
-      for (int v = 0; v < distTo.length; v++)
-        distTo[v] = Double.POSITIVE_INFINITY;
-      distTo[TOP] = 0.0;
-      LittleDFS order = new LittleDFS();
-      for (int v : order.reversePostorder()) {
-        relax(v);
-      }
-    }
-
-    public Iterable<Integer> pathToBottom() {
-      Stack<Integer> path = new Stack<Integer>();
-      for (int x = edgeTo[BOTTOM]; x != TOP; x = edgeTo[x])
-        path.push(x);
-      return path;
-    }
-
-    private double getWeight(int v, int w) {
-      if (v == TOP || w == BOTTOM)
-        return 1000.0;
-      int[] vcoords = convert2D(v);
-      int[] wcoords = convert2D(w);
-      if (switched) {
-        int tmp = vcoords[0];
-        vcoords[0] = vcoords[1];
-        vcoords[1] = tmp;
-        tmp = wcoords[0];
-        wcoords[0] = wcoords[1];
-        wcoords[1] = tmp;
-      }
-      double venergy = energy[vcoords[0]][vcoords[1]];
-      double wenergy = energy[wcoords[0]][wcoords[1]];
-      return venergy + wenergy;
-    }
-
-    private void relax(int v) {
-      for (int w : getNeighbors(v)) {
-        double weight = distTo[v] + getWeight(v, w);
-        if (distTo[w] > weight) {
-          distTo[w] = weight;
-          edgeTo[w] = v;
-        }
-      }
-    }
-  }
-
-  /* API code */
-
-  public SeamCarver(Picture picture) {
-    if (picture == null)
-      throw new IllegalArgumentException();
-    this.picture = new Picture(picture);
-    this.width = picture.width();
-    this.height = picture.height();
-    pixels = new int[width][height];
-    energy = new double[width][height];
-
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        pixels[x][y] = picture.getRGB(x, y);
-        energy[x][y] = computeEnergy(x, y);
-      }
-    }
-    switched = false;
-    TOP = width*height;
-    BOTTOM = width*height+1;
-  }
-
-  public Picture picture() {
-    return picture;
-  }
-
-  public int width() {
-    return width;
-  }
-
-  public int height() {
-    return height;
-  }
-
-  public double energy(int x, int y) {
-    if (!checkBounds(x, y))
-      throw new IllegalArgumentException();
-    return energy[x][y];
-  }
-
-  public int[] findHorizontalSeam() {
-
-    int w = width;
-    int h = height;
-
-    width = height;
-    height = w;
-    switched = true;
-    int[] seam = findVerticalSeam();
-    width = w;
-    height = h;
-    switched = false;
-    return seam;
-  }
-
-  public int[] findVerticalSeam() {
-    int[] seam = new int[height];
-    LittleAcyclicSP sp = new LittleAcyclicSP();
-    Stack<Integer> s = (Stack<Integer>) sp.pathToBottom();
-
-    int i = 0;
-    for (int v : s) {
-      int[] coords = convert2D(v);
-      seam[i++] = coords[0];
-    }
-    return seam;
-  }
-
-  public void removeHorizontalSeam(int[] seam) {
-    return;
-  }
-
-  public void removeVerticalSeam(int[] seam) {
-    return;
-  }
-
-  public static void main(String[] args) {
-    Picture pic = new Picture(args[0]);
-    SeamCarver s = new SeamCarver(pic);
-    int i = 0;
-    for (int x : s.findVerticalSeam())
-      StdOut.printf("%d, %d\n", x, i++);
-    i = 0;
-    for (int y : s.findHorizontalSeam())
-      StdOut.printf("%d, %d\n", i++, y);
-  }
 }
