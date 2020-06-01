@@ -9,7 +9,6 @@ public class SeamCarver {
   private int width;
   private int height;
   private boolean switched;
-  private Picture picture;
   private double[][] energy;
   private int[][] pixels;
 
@@ -17,9 +16,10 @@ public class SeamCarver {
   private final int BOTTOM;
 
   public SeamCarver(Picture picture) {
+    if (picture == null)
+      throw new IllegalArgumentException();
     this.width = picture.width();
     this.height = picture.height();
-    this.picture = new Picture(picture);
     switched = false;
     energy = new double[width][height];
     pixels = new int[width][height];
@@ -27,18 +27,30 @@ public class SeamCarver {
     BOTTOM = width*height+1;
     for (int y = 0; y < height; y++) {
       for (int x = 0; x < width; x++) {
-        energy[x][y] = computeEnergy(x, y);
+        energy[x][y] = computeEnergy(picture, x, y);
         pixels[x][y] = picture.getRGB(x, y);
       }
     }
   }
 
   public Picture picture() {
-    Picture p = new Picture(width, height);
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        if (pixels[x][y] != -1)
-          p.setRGB(x, y, pixels[x][y]);
+    int W = width, H = height;
+    for (int i = 0; i < pixels.length; i++) {
+      if (pixels[i][0] == -1) {
+        W = i+1;
+        break;
+      }
+    }
+    for (int i = 0; i < pixels.length; i++) {
+      if (pixels[0][i] == -1) {
+        H = i+1;
+        break;
+      }
+    }
+    Picture p = new Picture(W, H);
+    for (int x = 0; x < W; x++) {
+      for (int y = 0; y < H; y++) {
+        p.setRGB(x, y, pixels[x][y]);
       }
     }
     return p;
@@ -78,13 +90,38 @@ public class SeamCarver {
   }
 
   public void removeHorizontalSeam(int[] seam) {
-    for (int i = 0; i < seam.length; i++)
-      pixels[i][seam[i]] = -1;
+    if (seam == null || seam.length != width || width < 2)
+      throw new IllegalArgumentException();
+    for (int i = 0; i < seam.length; i++) {
+      if (!checkBounds(i, seam[i]))
+        throw new IllegalArgumentException();
+      if (i < seam.length-1 && Math.abs(seam[i] - seam[i+1]) > 1)
+        throw new IllegalArgumentException();
+    }
+
+    for (int i = 0; i < seam.length; i++) {
+      for (int k = i+1; k < width; k++) {
+        pixels[k-1][seam[i]] = pixels[k][seam[i]];
+      }
+      pixels[width-1][seam[i]] = -1;
+    }
   }
 
   public void removeVerticalSeam(int[] seam) {
-    for (int i = 0; i < seam.length; i++)
-      pixels[seam[i]][i] = -1;
+    if (seam == null || seam.length != height || height < 2)
+      throw new IllegalArgumentException();
+    for (int i = 0; i < seam.length; i++) {
+      if (!checkBounds(seam[i], i))
+        throw new IllegalArgumentException();
+      if (i < seam.length-1 && Math.abs(seam[i] - seam[i+1]) > 1)
+        throw new IllegalArgumentException();
+    }
+    for (int i = 0; i < seam.length; i++) {
+      for (int k = i+1; k < height; k++) {
+        pixels[seam[i]][k-1] = pixels[seam[i]][k];
+      }
+      pixels[seam[i]][height-1] = -1;
+    }
   }
 
   public static void main(String[] args) {
@@ -109,7 +146,7 @@ public class SeamCarver {
     return coords;
   }
 
-  private double computeDelta(int x1, int y1, int x2, int y2) {
+  private double computeDelta(Picture picture, int x1, int y1, int x2, int y2) {
     Color A = picture.get(x1, y1);
     Color B = picture.get(x2, y2);
 
@@ -119,11 +156,11 @@ public class SeamCarver {
     return red*red + green*green + blue*blue;
   }
 
-  private double computeEnergy(int x, int y) {
+  private double computeEnergy(Picture picture, int x, int y) {
     if (x == 0 || x == width-1 || y == 0 || y == height-1)
       return 1000.0;
-    double deltaX = computeDelta(x-1, y, x+1, y);
-    double deltaY = computeDelta(x, y-1, x, y+1);
+    double deltaX = computeDelta(picture, x-1, y, x+1, y);
+    double deltaY = computeDelta(picture, x, y-1, x, y+1);
     return Math.sqrt(deltaX + deltaY);
   }
 
