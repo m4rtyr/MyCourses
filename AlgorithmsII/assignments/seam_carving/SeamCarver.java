@@ -1,235 +1,179 @@
+
+
 import java.awt.Color;
 import edu.princeton.cs.algs4.Picture;
-import edu.princeton.cs.algs4.Stack;
-import edu.princeton.cs.algs4.Queue;
-import edu.princeton.cs.algs4.StdOut;
+import edu.princeton.cs.algs4.IndexMinPQ;
 
 public class SeamCarver {
+    private int[][] pixels;
+    private int width, height;
 
-  private int width;
-  private int height;
-  private boolean switched;
-  private double[][] energy;
-  private int[][] pixels;
-
-  private final int TOP;
-  private final int BOTTOM;
-
-  public SeamCarver(Picture picture) {
-    if (picture == null)
-      throw new IllegalArgumentException();
-    this.width = picture.width();
-    this.height = picture.height();
-    switched = false;
-    energy = new double[width][height];
-    pixels = new int[width][height];
-    TOP = width*height;
-    BOTTOM = width*height+1;
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        energy[x][y] = computeEnergy(picture, x, y);
-        pixels[x][y] = picture.getRGB(x, y);
-      }
-    }
-  }
-
-  public Picture picture() {
-    int W = width, H = height;
-    for (int i = 0; i < pixels.length; i++) {
-      if (pixels[i][0] == -1) {
-        W = i+1;
-        break;
-      }
-    }
-    for (int i = 0; i < pixels.length; i++) {
-      if (pixels[0][i] == -1) {
-        H = i+1;
-        break;
-      }
-    }
-    Picture p = new Picture(W, H);
-    for (int x = 0; x < W; x++) {
-      for (int y = 0; y < H; y++) {
-        p.setRGB(x, y, pixels[x][y]);
-      }
-    }
-    return p;
-  }
-
-  public int width() { return width; }
-  public int height() { return height; }
-
-  public double energy(int x, int y) {
-    if (!checkBounds(x, y))
-      throw new IllegalArgumentException();
-    return energy[x][y];
-  }
-
-  public int[] findHorizontalSeam() {
-    int w = width;
-    int h = height;
-
-    width = height;
-    height = w;
-    switched = true;
-    int[] seam = findVerticalSeam();
-    switched = false;
-    width = w;
-    height = h;
-    return seam;
-  }
-
-  public int[] findVerticalSeam() {
-    int i = 0;
-    int[] seam = new int[height];
-    for (int v : computePath()) {
-      int[] coords = convert2D(v);
-      seam[i++] = coords[0];
-    }
-    return seam;
-  }
-
-  public void removeHorizontalSeam(int[] seam) {
-    if (seam == null || seam.length != width || width < 2)
-      throw new IllegalArgumentException();
-    for (int i = 0; i < seam.length; i++) {
-      if (!checkBounds(i, seam[i]))
-        throw new IllegalArgumentException();
-      if (i < seam.length-1 && Math.abs(seam[i] - seam[i+1]) > 1)
-        throw new IllegalArgumentException();
+    public SeamCarver(Picture picture) {
+        width = picture.width();
+        height = picture.height();
+        pixels = new int[width][height];
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++) {
+                pixels[x][y] = picture.get(x, y).getRGB();
+            }
     }
 
-    for (int i = 0; i < seam.length; i++) {
-      for (int k = i+1; k < width; k++) {
-        pixels[k-1][seam[i]] = pixels[k][seam[i]];
-      }
-      pixels[width-1][seam[i]] = -1;
+    // current picture
+    public Picture picture() {
+        Picture pic = new Picture(width, height);
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++) {
+                pic.set(x, y, new Color(pixels[x][y]));
+            }
+        return pic;
     }
-  }
 
-  public void removeVerticalSeam(int[] seam) {
-    if (seam == null || seam.length != height || height < 2)
-      throw new IllegalArgumentException();
-    for (int i = 0; i < seam.length; i++) {
-      if (!checkBounds(seam[i], i))
-        throw new IllegalArgumentException();
-      if (i < seam.length-1 && Math.abs(seam[i] - seam[i+1]) > 1)
-        throw new IllegalArgumentException();
+    // width  of current picture
+    public int width() {
+        return width;
     }
-    for (int i = 0; i < seam.length; i++) {
-      for (int k = i+1; k < height; k++) {
-        pixels[seam[i]][k-1] = pixels[seam[i]][k];
-      }
-      pixels[seam[i]][height-1] = -1;
+
+    // height of current picture
+    public int height() {
+        return height;
     }
-  }
 
-  public static void main(String[] args) {
-    SeamCarver s = new SeamCarver(new Picture(args[0]));
-    StdOut.println(s.energy(1, 2));
-  }
+    // energy of pixel at column x and row y in current picture
+    public double energy(int x, int y) {
+        if (x < 0 || x > width() - 1 || y < 0 || y > height() - 1)
+            throw new IllegalArgumentException();
 
-  private boolean checkBounds(int x, int y) {
-    return x >= 0 && x < width && y >= 0 && y < height;
-  }
+        if (x == 0 || x == width()-1 || y == 0 || y == height()-1)
+            return 1000.0;
+        return Math.sqrt(squareOfXGradient(x, y) + squareOfYGradient(x, y));
+    }
 
-  private int convert1D(int x, int y) {
-    return y*width + x;
-  }
+    // sequence of indices for horizontal seam in current picture
+    public int[] findHorizontalSeam() {
+        // construct energy matrix by H x W
+        double[][] energyMatrix = toEnergyMatrix(height, width, true);
+        return findSeam(energyMatrix);
+    }
 
-  private int[] convert2D(int v) {
-    int[] coords = new int[2];
-    int y = v / width;
-    int x = v - y*width;
-    coords[0] = x;
-    coords[1] = y;
-    return coords;
-  }
+    // sequence of indices for vertical   seam in current picture
+    public int[] findVerticalSeam() {
+        // construct energy matrix by W x H
+        double[][] energyMatrix = toEnergyMatrix(width, height, false);
+        return findSeam(energyMatrix);
+    }
 
-  private double computeDelta(Picture picture, int x1, int y1, int x2, int y2) {
-    Color A = picture.get(x1, y1);
-    Color B = picture.get(x2, y2);
+    private int[] findSeam(double[][] eMatrix) {
+        int W = eMatrix.length;
+        int H = eMatrix[0].length;
 
-    int red = A.getRed() - B.getRed();
-    int green = A.getGreen() - B.getGreen();
-    int blue = A.getBlue() - B.getBlue();
-    return red*red + green*green + blue*blue;
-  }
+        // construst energyTo matrix
+        double[][] energyTo = new double[W][H];
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++) {
+                if (y == 0) energyTo[x][y] = 1000.0;
+                else energyTo[x][y] = Double.POSITIVE_INFINITY;
+            }
 
-  private double computeEnergy(Picture picture, int x, int y) {
-    if (x == 0 || x == width-1 || y == 0 || y == height-1)
-      return 1000.0;
-    double deltaX = computeDelta(picture, x-1, y, x+1, y);
-    double deltaY = computeDelta(picture, x, y-1, x, y+1);
-    return Math.sqrt(deltaX + deltaY);
-  }
+        int[] seam = new int[H];
+        int[][] edgeTo = new int[W][H];
+        IndexMinPQ<Double> pq = new IndexMinPQ<Double>(W);
 
-  private Stack<Integer> computePath() {
-    double[] dist = new double[width*height+2];
-    int[] edgeTo = new int[width*height+2];
-    for (int i = 0; i < dist.length; i++)
-      dist[i] = Double.POSITIVE_INFINITY;
-    dist[TOP] = 0.0;
-    for (int v : topologicalSort()) {
-      for (int w : getNeighbors(v)) {
-        if (dist[w] > dist[v] + getWeight(v, w)) {
-          dist[w] = dist[v] + getWeight(v, w);
-          edgeTo[w] = v;
+        for (int y = 0; y < H - 1; y++)
+            for (int x = 0; x < W; x++)
+                for (int k = x-1; k <= x+1; k++)
+                    if (k >= 0 && k < W)
+                        if (energyTo[k][y+1] > energyTo[x][y] + eMatrix[k][y+1]) {
+                            energyTo[k][y+1] = energyTo[x][y] + eMatrix[k][y+1];
+                            edgeTo[k][y+1] = xyTo1D(x, y, eMatrix);
+                        }
+        for (int x = 0; x < W; x++)
+            pq.insert(x, energyTo[x][H-1]);
+        seam[H-1] = pq.minIndex();
+
+        // back-track
+        for (int y = H-1; y > 0; y--)
+            seam[y-1] = edgeTo[seam[y]][y] % W;
+        return seam;
+    }
+
+    // remove horizontal seam from current picture
+    public void removeHorizontalSeam(int[] seam) {
+        if (seam == null || seam.length != width || height <= 1)
+            throw new java.lang.IllegalArgumentException();
+        checkSeam(seam, false);
+
+        int[][] copy = new int[width][height-1];
+
+        for (int x = 0; x < width; x++) {
+            System.arraycopy(pixels[x], 0, copy[x], 0, seam[x]);
+            System.arraycopy(pixels[x], seam[x]+1, copy[x], seam[x], height-seam[x]-1);
         }
-      }
+
+        height--;
+        pixels = copy;
     }
 
-    Stack<Integer> path = new Stack<Integer>();
-    for (int x = edgeTo[BOTTOM]; x != TOP; x = edgeTo[x])
-      path.push(x);
-    return path;
-  }
+    // remove vertical seam from current picture
+    public void removeVerticalSeam(int[] seam) {
+        if (seam == null || seam.length != height || width <= 1)
+            throw new java.lang.IllegalArgumentException();
+        checkSeam(seam, true);
+        int[][] copy = new int[width-1][height];
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (x < seam[y]) copy[x][y] = pixels[x][y];
+                else if (x > seam[y]) copy[x-1][y] = pixels[x][y];
+            }
+        }
 
-  private double getWeight(int v, int w) {
-    if (v == TOP || w == BOTTOM)
-      return 1000.0;
-    int[] vcoords = convert2D(v);
-    int[] wcoords = convert2D(w);
-
-    double venergy = !switched ? energy[vcoords[0]][vcoords[1]] : energy[vcoords[1]][vcoords[0]];
-    double wenergy = !switched ? energy[wcoords[0]][wcoords[1]] : energy[wcoords[1]][wcoords[0]];
-    return venergy + wenergy;
-  }
-
-  private Stack<Integer> topologicalSort() {
-    Stack<Integer> reversePost = new Stack<Integer>();
-    boolean[] marked = new boolean[width*height+2];
-    dfs(marked, reversePost, TOP);
-    return reversePost;
-  }
-
-  private void dfs(boolean[] marked, Stack<Integer> s, int v) {
-    marked[v] = true;
-    for (int w : getNeighbors(v))
-      if (!marked[w]) dfs(marked, s, w);
-    s.push(v);
-  }
-
-  private Queue<Integer> getNeighbors(int v) {
-    Queue<Integer> neighbors = new Queue<Integer>();
-    if (v == TOP) {
-      for (int x = 0; x < width; x++)
-        neighbors.enqueue(convert1D(x, 0));
-      return neighbors;
+        width--;
+        pixels = copy;
     }
-    int[] coords = convert2D(v);
-    int x = coords[0], y = coords[1];
-    if (y == height-1) {
-      neighbors.enqueue(BOTTOM);
-      return neighbors;
-    }
-    if (checkBounds(x, y+1))
-      neighbors.enqueue(convert1D(x, y+1));
-    if (checkBounds(x-1, y+1))
-      neighbors.enqueue(convert1D(x-1, y+1));
-    if (checkBounds(x+1, y+1))
-      neighbors.enqueue(convert1D(x+1, y+1));
-    return neighbors;
-  }
 
+    private void checkSeam(int[] a, boolean vertical) {
+        for (int i = 1; i < a.length; i++) {
+            if (Math.abs(a[i - 1] - a[i]) > 1)
+                throw new IllegalArgumentException();
+        }
+        for (int i = 0; i < a.length; i++) {
+          if (vertical && (a[i] < 0 || a[i] > width-1))
+            throw new IllegalArgumentException();
+          else if (!vertical && (a[i] < 0 || a[i] > height-1))
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private double squareOfXGradient(int x, int y) {
+        Color c1 = new Color(pixels[x-1][y]);
+        Color c2 = new Color(pixels[x+1][y]);
+        double r = Math.abs(c1.getRed() - c2.getRed());
+        double g = Math.abs(c1.getGreen() - c2.getGreen());
+        double b = Math.abs(c1.getBlue() - c2.getBlue());
+        return r*r + g*g + b*b;
+    }
+
+    private double squareOfYGradient(int x, int y) {
+        Color c1 = new Color(pixels[x][y-1]);
+        Color c2 = new Color(pixels[x][y+1]);
+        double r = Math.abs(c1.getRed() - c2.getRed());
+        double g = Math.abs(c1.getGreen() - c2.getGreen());
+        double b = Math.abs(c1.getBlue() - c2.getBlue());
+        return r*r + g*g + b*b;
+    }
+
+    private double[][] toEnergyMatrix(int W, int H, boolean isTranspose)
+    {
+        double[][] result = new double[W][H];
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++) {
+                if (isTranspose) result[x][y] = energy(y, x);
+                else result[x][y] = energy(x, y);
+            }
+
+        return result;
+    }
+
+    private int xyTo1D(int x, int y, double[][] m) {
+        return y * m.length + x;
+    }
 }
